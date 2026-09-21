@@ -100,6 +100,15 @@ demo-build:
 	@echo "→ Building in demo mode..."
 	@export VITE_DEMO_BUILD="true" && $(MAKE) build
 
+# Start Postgres and Redis for local development (see DEVELOPMENT.md). Stop them with `make dev-db-down`.
+.PHONY: dev-db
+dev-db:
+	docker compose up -d db redis
+
+.PHONY: dev-db-down
+dev-db-down:
+	docker compose stop db redis
+
 # Run tests. Integration tests need a Postgres; start one with `make test-db` first, else they skip.
 .PHONY: test
 test:

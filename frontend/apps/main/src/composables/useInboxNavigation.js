@@ -1,14 +1,17 @@
 import { useRouter } from 'vue-router'
 import { useIsMobile } from '@shared-ui/composables'
 import { useConversationStore } from '@main/stores/conversation'
+import { useInboxLayout } from '@main/composables/useInboxLayout'
 
 export function useInboxNavigation() {
   const router = useRouter()
   const isMobile = useIsMobile()
+  const { isTableLayout } = useInboxLayout()
   const conversationStore = useConversationStore()
 
+  // Keep the open conversation only in the split layout; full-screen layouts land on the list.
   const openConversationUUID = () =>
-    !isMobile.value && conversationStore.isConversationOpen
+    !isMobile.value && !isTableLayout.value && conversationStore.isConversationOpen
       ? conversationStore.conversation.data?.uuid
       : null
 

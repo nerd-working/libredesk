@@ -4,7 +4,7 @@
     <div class="h-12 flex-shrink-0 px-2 border-b flex items-center justify-between gap-2">
       <div class="flex items-center gap-1 min-w-0">
         <Button
-          v-if="isMobile"
+          v-if="isFullScreen"
           variant="ghost"
           class="w-11 h-11 md:w-8 md:h-8 p-0 shrink-0 -ml-2 md:-ml-1"
           :aria-label="t('globals.messages.back')"
@@ -93,6 +93,7 @@ import { useUserStore } from '@main/stores/user'
 import { Clock, MoreHorizontal, ChevronLeft, PanelRight } from 'lucide-vue-next'
 import { useRoute, useRouter } from 'vue-router'
 import { useIsMobile } from '@shared-ui/composables'
+import { useInboxLayout } from '@main/composables/useInboxLayout'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -122,6 +123,9 @@ const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const isMobile = useIsMobile()
+const { isTableLayout } = useInboxLayout()
+// Mobile and the table layout both show the conversation full screen, so they need a way back to the list.
+const isFullScreen = computed(() => isMobile.value || isTableLayout.value)
 const canCompose = computed(
   () => userStore.can(perms.MESSAGES_WRITE) || userStore.can(perms.MESSAGES_WRITE_PRIVATE)
 )

@@ -1,0 +1,43 @@
+# Self-contained build: compiles the frontend and the Go binary from source and
+# stuffs the static assets into it. Use this to deploy a fork or an unreleased
+# commit (e.g. from EasyPanel / Coolify / `docker build`). The plain `Dockerfile`
+# only packages a binary that GoReleaser has already built.
+#
+#   docker build -f Dockerfile.build -t libredesk:custom .
+#
+# Set LIBREDESK_VERSION to control the version string shown in the UI.
+
+# ---- Frontend ---------------------------------------------------------------
+FROM node:20-alpine AS frontend
+ARG LIBREDESK_VERSION=v0.0.0-custom
+ENV VITE_APP_VERSION=${LIBREDESK_VERSION}
+ENV COREPACK_INTEGRITY_KEYS=0
+WORKDIR /src/frontend
+RUN corepack enable
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY frontend/ ./
+COPY static/ ../static/
+RUN pnpm build:main && pnpm build:widget
+
+# ---- Backend ----------------------------------------------------------------
+FROM golang:1.25-alpine AS backend
+ARG LIBREDESK_VERSION=v0.0.0-custom
+RUN apk --no-cache add make git
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+COPY --from=frontend /src/frontend/dist ./frontend/dist
+# build-backend + stuff, skipping the frontend targets (already built above).
+RUN LIBREDESK_VERSION=${LIBREDESK_VERSION} make build-backend \
+ && LIBREDESK_VERSION=${LIBREDESK_VERSION} make stuff
+
+# ---- Runtime (mirrors ./Dockerfile) ----------------------------------------
+FROM alpine:3.18
+RUN apk --no-cache add ca-certificates tzdata
+WORKDIR /libredesk
+COPY --from=backend /src/libredesk .
+COPY config.sample.toml config.toml
+EXPOSE 9000
+CMD ["./libredesk"]
