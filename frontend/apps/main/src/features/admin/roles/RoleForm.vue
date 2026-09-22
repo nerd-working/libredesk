@@ -197,6 +197,15 @@ const permissions = ref([
       { name: perms.CONTACT_NOTES_WRITE, label: t('admin.role.contactNotes.write') },
       { name: perms.CONTACT_NOTES_DELETE, label: t('admin.role.contactNotes.delete') }
     ]
+  },
+  {
+    name: t('tasks.title'),
+    permissions: [
+      { name: perms.TASKS_READ, label: t('admin.role.tasks.read') },
+      { name: perms.TASKS_WRITE, label: t('admin.role.tasks.write') },
+      { name: perms.TASKS_DELETE, label: t('admin.role.tasks.delete') },
+      { name: perms.TASKS_MANAGE, label: t('admin.role.tasks.manage') }
+    ]
   }
 ])
 

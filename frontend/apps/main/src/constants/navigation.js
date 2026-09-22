@@ -123,6 +123,12 @@ export const adminNavItems = [
         icon: 'CircleDot'
       },
       {
+        titleKey: 'tasks.statuses',
+        href: '/admin/conversations/task-statuses',
+        permission: 'tasks:manage',
+        icon: 'ListChecks'
+      },
+      {
         titleKey: 'globals.terms.tag',
         href: '/admin/conversations/tags',
         permission: 'tags:manage',

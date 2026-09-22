@@ -45,6 +45,48 @@ const routes = [
         meta: { titleKey: 'globals.terms.contact', titleCount: 2 }
       },
       {
+        path: 'tasks',
+        name: 'tasks',
+        redirect: { name: 'tasks-mine' },
+        children: [
+          {
+            path: 'mine',
+            name: 'tasks-mine',
+            component: () => import('@main/views/tasks/TasksView.vue'),
+            props: { scope: 'mine' },
+            meta: { titleKey: 'tasks.myTasks', hidePageHeader: true }
+          },
+          {
+            path: 'all',
+            name: 'tasks-all',
+            component: () => import('@main/views/tasks/TasksView.vue'),
+            props: { scope: 'all' },
+            meta: { titleKey: 'tasks.allTasks', hidePageHeader: true }
+          },
+          {
+            path: 'overdue',
+            name: 'tasks-overdue',
+            component: () => import('@main/views/tasks/TasksView.vue'),
+            props: { scope: 'overdue' },
+            meta: { titleKey: 'tasks.overdue', hidePageHeader: true }
+          },
+          {
+            path: 'unassigned',
+            name: 'tasks-unassigned',
+            component: () => import('@main/views/tasks/TasksView.vue'),
+            props: { scope: 'unassigned' },
+            meta: { titleKey: 'tasks.unassigned', hidePageHeader: true }
+          },
+          {
+            path: 'projects/:projectId',
+            name: 'tasks-project',
+            component: () => import('@main/views/tasks/TasksView.vue'),
+            props: (route) => ({ scope: 'project', projectId: Number(route.params.projectId) }),
+            meta: { titleKey: 'tasks.title', hidePageHeader: true }
+          }
+        ]
+      },
+      {
         path: '/reports',
         name: 'reports',
         redirect: '/reports/overview',
@@ -602,6 +644,11 @@ const routes = [
                 path: 'statuses',
                 component: () => import('@main/views/admin/status/StatusView.vue'),
                 meta: { titleKey: 'globals.terms.status', titleCount: 2 }
+              },
+              {
+                path: 'task-statuses',
+                component: () => import('@main/views/admin/tasks/TaskStatusesView.vue'),
+                meta: { titleKey: 'tasks.statuses' }
               },
               {
                 path: 'macros',

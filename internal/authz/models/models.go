@@ -98,6 +98,12 @@ const (
 
 	// Activity log
 	PermActivityLogsManage = "activity_logs:manage"
+
+	// Tasks
+	PermTasksRead   = "tasks:read"
+	PermTasksWrite  = "tasks:write"
+	PermTasksDelete = "tasks:delete"
+	PermTasksManage = "tasks:manage"
 )
 
 var validPermissions = map[string]struct{}{
@@ -149,6 +155,10 @@ var validPermissions = map[string]struct{}{
 	PermActivityLogsManage:              {},
 	PermWebhooksManage:                  {},
 	PermContextLinksManage:              {},
+	PermTasksRead:                       {},
+	PermTasksWrite:                      {},
+	PermTasksDelete:                     {},
+	PermTasksManage:                     {},
 }
 
 // PermissionExists returns true if the permission exists else false

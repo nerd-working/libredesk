@@ -53,6 +53,7 @@ import {
 import MobileDrawerNav from './MobileDrawerNav.vue'
 import MobileDrawerFooter from './MobileDrawerFooter.vue'
 import SidebarCountBadge from './SidebarCountBadge.vue'
+import TasksSidebar from '@main/features/tasks/TasksSidebar.vue'
 import { filterNavItems } from '@main/utils/nav-permissions'
 import { permissions } from '@main/constants/permissions'
 import { useStorage } from '@vueuse/core'
@@ -82,6 +83,10 @@ const isActiveParent = (parentHref) => {
 const isInboxRoute = (path) => {
   return path.startsWith('/inboxes')
 }
+
+const isTasksRoute = computed(() =>
+  route.matched.some((record) => record.name && record.name.startsWith('tasks'))
+)
 
 const openCreateViewDialog = () => {
   emit('createView')
@@ -225,6 +230,13 @@ onMounted(() => {
           </SidebarGroup>
         </SidebarContent>
         <MobileDrawerFooter />
+      </Sidebar>
+    </template>
+
+    <!-- Tasks sidebar -->
+    <template v-if="isTasksRoute && userStore.can('tasks:read')">
+      <Sidebar collapsible="offcanvas" class="sidebar-secondary">
+        <TasksSidebar />
       </Sidebar>
     </template>
 

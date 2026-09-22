@@ -49,6 +49,7 @@ import (
 	"github.com/abhinavxd/libredesk/internal/role"
 	"github.com/abhinavxd/libredesk/internal/setting"
 	"github.com/abhinavxd/libredesk/internal/tag"
+	"github.com/abhinavxd/libredesk/internal/task"
 	"github.com/abhinavxd/libredesk/internal/team"
 	"github.com/abhinavxd/libredesk/internal/template"
 	"github.com/abhinavxd/libredesk/internal/user"
@@ -110,6 +111,7 @@ type App struct {
 	status           *status.Manager
 	priority         *priority.Manager
 	tag              *tag.Manager
+	task             *task.Manager
 	inbox            *inbox.Manager
 	tmpl             *template.Manager
 	macro            *macro.Manager
@@ -327,6 +329,7 @@ func main() {
 		search:           initSearch(db, i18n, conversation),
 		role:             initRole(db, i18n),
 		tag:              initTag(db, i18n),
+		task:             initTask(db, i18n),
 		macro:            initMacro(db, i18n),
 		ai:               ai,
 		aiAgent:          aiAgent,

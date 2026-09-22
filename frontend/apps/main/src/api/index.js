@@ -285,6 +285,26 @@ const createUser = (data) =>
     }
   })
 const getTags = (params) => http.get('/api/v1/tags', { params })
+const getTasks = (params) => http.get('/api/v1/tasks', { params })
+const getTask = (id) => http.get(`/api/v1/tasks/${id}`)
+const createTask = (data) => http.post('/api/v1/tasks', data)
+const updateTask = (id, data) => http.put(`/api/v1/tasks/${id}`, data)
+const moveTask = (id, data) => http.put(`/api/v1/tasks/${id}/move`, data)
+const deleteTask = (id) => http.delete(`/api/v1/tasks/${id}`)
+const getTaskActivities = (id) => http.get(`/api/v1/tasks/${id}/activities`)
+const getTaskComments = (id) => http.get(`/api/v1/tasks/${id}/comments`)
+const createTaskComment = (id, data) => http.post(`/api/v1/tasks/${id}/comments`, data)
+const deleteTaskComment = (id, commentID) =>
+  http.delete(`/api/v1/tasks/${id}/comments/${commentID}`)
+const getConversationTasks = (uuid) => http.get(`/api/v1/conversations/${uuid}/tasks`)
+const getTaskProjects = (params) => http.get('/api/v1/task-projects', { params })
+const createTaskProject = (data) => http.post('/api/v1/task-projects', data)
+const updateTaskProject = (id, data) => http.put(`/api/v1/task-projects/${id}`, data)
+const deleteTaskProject = (id) => http.delete(`/api/v1/task-projects/${id}`)
+const getTaskStatuses = () => http.get('/api/v1/task-statuses')
+const createTaskStatus = (data) => http.post('/api/v1/task-statuses', data)
+const updateTaskStatus = (id, data) => http.put(`/api/v1/task-statuses/${id}`, data)
+const deleteTaskStatus = (id) => http.delete(`/api/v1/task-statuses/${id}`)
 const importTags = (data) =>
   http.post('/api/v1/tags/import', data, {
     headers: {
@@ -882,5 +902,24 @@ export default {
   updateNotificationPreferences,
   createPushSubscription,
   deletePushSubscription,
-  getContactPageVisits
+  getContactPageVisits,
+  getTasks,
+  getTask,
+  createTask,
+  updateTask,
+  moveTask,
+  deleteTask,
+  getTaskActivities,
+  getTaskComments,
+  createTaskComment,
+  deleteTaskComment,
+  getConversationTasks,
+  getTaskProjects,
+  createTaskProject,
+  updateTaskProject,
+  deleteTaskProject,
+  getTaskStatuses,
+  createTaskStatus,
+  updateTaskStatus,
+  deleteTaskStatus
 }

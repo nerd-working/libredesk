@@ -133,6 +133,16 @@
           </AccordionContent>
         </AccordionItem>
 
+        <!-- Tasks linked to this conversation -->
+        <AccordionItem v-if="userStore.can('tasks:read')" value="tasks" class="accordion-item">
+          <AccordionTrigger class="accordion-trigger">
+            {{ $t('tasks.title') }}
+          </AccordionTrigger>
+          <AccordionContent class="accordion-content">
+            <ConversationTasks />
+          </AccordionContent>
+        </AccordionItem>
+
         <!-- Previous conversations -->
         <AccordionItem value="previous_conversations" class="accordion-item">
           <AccordionTrigger class="accordion-trigger">
@@ -177,6 +187,7 @@ import CustomAttributes from '@/features/conversation/sidebar/CustomAttributes.v
 import { useCustomAttributeStore } from '@/stores/customAttributes'
 import ContactNotes from '@/features/contact/ContactNotes.vue'
 import PreviousConversations from '@/features/conversation/sidebar/PreviousConversations.vue'
+import ConversationTasks from '@/features/conversation/sidebar/ConversationTasks.vue'
 import ConversationSideBarPageVisits from '@/features/conversation/sidebar/ConversationSideBarPageVisits.vue'
 import SelectComboBox from '@main/components/combobox/SelectCombobox.vue'
 import SelectAgentCombobox from '@main/components/combobox/SelectAgentCombobox.vue'

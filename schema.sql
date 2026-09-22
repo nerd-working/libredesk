@@ -26,6 +26,8 @@ DROP TYPE IF EXISTS "user_notification_type" CASCADE; CREATE TYPE "user_notifica
 DROP TYPE IF EXISTS "notification_channel" CASCADE; CREATE TYPE "notification_channel" AS ENUM ('in_app', 'email', 'push');
 DROP TYPE IF EXISTS "conversation_status_category" CASCADE; CREATE TYPE "conversation_status_category" AS ENUM ('open', 'waiting', 'resolved');
 DROP TYPE IF EXISTS "ai_knowledge_type" CASCADE; CREATE TYPE "ai_knowledge_type" AS ENUM ('snippet');
+DROP TYPE IF EXISTS "task_priority" CASCADE; CREATE TYPE "task_priority" AS ENUM ('low', 'medium', 'high', 'urgent');
+DROP TYPE IF EXISTS "task_status_category" CASCADE; CREATE TYPE "task_status_category" AS ENUM ('todo', 'in_progress', 'done');
 DROP TYPE IF EXISTS "webhook_event" CASCADE; CREATE TYPE webhook_event AS ENUM (
 	'conversation.created',
 	'conversation.status_changed',
@@ -1000,6 +1002,87 @@ CREATE TABLE notification_email_queue (
 );
 CREATE INDEX index_notification_email_queue_on_send_at ON notification_email_queue(send_at);
 
+DROP TABLE IF EXISTS task_projects CASCADE;
+CREATE TABLE task_projects (
+	id SERIAL PRIMARY KEY,
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	updated_at TIMESTAMPTZ DEFAULT NOW(),
+	name TEXT NOT NULL UNIQUE,
+	description TEXT NOT NULL DEFAULT '',
+	color TEXT NOT NULL DEFAULT '',
+	archived_at TIMESTAMPTZ NULL,
+	created_by BIGINT REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,
+	CONSTRAINT constraint_task_projects_on_name CHECK (length(name) <= 140),
+	CONSTRAINT constraint_task_projects_on_description CHECK (length(description) <= 2000),
+	CONSTRAINT constraint_task_projects_on_color CHECK (length(color) <= 20)
+);
+
+DROP TABLE IF EXISTS task_statuses CASCADE;
+CREATE TABLE task_statuses (
+	id SERIAL PRIMARY KEY,
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	updated_at TIMESTAMPTZ DEFAULT NOW(),
+	name TEXT NOT NULL UNIQUE,
+	category task_status_category NOT NULL DEFAULT 'todo',
+	color TEXT NOT NULL DEFAULT '',
+	position INT NOT NULL DEFAULT 0,
+	is_default BOOLEAN NOT NULL DEFAULT false,
+	CONSTRAINT constraint_task_statuses_on_name CHECK (length(name) <= 140),
+	CONSTRAINT constraint_task_statuses_on_color CHECK (length(color) <= 20)
+);
+
+DROP TABLE IF EXISTS tasks CASCADE;
+CREATE TABLE tasks (
+	id BIGSERIAL PRIMARY KEY,
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	updated_at TIMESTAMPTZ DEFAULT NOW(),
+	"uuid" UUID DEFAULT gen_random_uuid() NOT NULL UNIQUE,
+	project_id INT REFERENCES task_projects(id) ON DELETE SET NULL ON UPDATE CASCADE,
+	-- Subtasks are deleted along with their parent.
+	parent_task_id BIGINT REFERENCES tasks(id) ON DELETE CASCADE ON UPDATE CASCADE,
+	title TEXT NOT NULL,
+	description TEXT NOT NULL DEFAULT '',
+	status_id INT REFERENCES task_statuses(id) ON DELETE RESTRICT ON UPDATE CASCADE NOT NULL,
+	priority task_priority NOT NULL DEFAULT 'medium',
+	assigned_user_id BIGINT REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,
+	conversation_id BIGINT REFERENCES conversations(id) ON DELETE SET NULL ON UPDATE CASCADE,
+	due_date DATE NULL,
+	completed_at TIMESTAMPTZ NULL,
+	position DOUBLE PRECISION NOT NULL DEFAULT 0,
+	created_by BIGINT REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,
+	CONSTRAINT constraint_tasks_on_title CHECK (length(title) <= 500),
+	CONSTRAINT constraint_tasks_on_description CHECK (length(description) <= 50000)
+);
+CREATE INDEX index_tasks_on_assigned_user_id ON tasks (assigned_user_id);
+CREATE INDEX index_tasks_on_project_id ON tasks (project_id);
+CREATE INDEX index_tasks_on_status_id ON tasks (status_id);
+CREATE INDEX index_tasks_on_parent_task_id ON tasks (parent_task_id);
+CREATE INDEX index_tasks_on_conversation_id ON tasks (conversation_id);
+CREATE INDEX index_tasks_on_due_date ON tasks (due_date);
+
+DROP TABLE IF EXISTS task_comments CASCADE;
+CREATE TABLE task_comments (
+	id BIGSERIAL PRIMARY KEY,
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	updated_at TIMESTAMPTZ DEFAULT NOW(),
+	task_id BIGINT REFERENCES tasks(id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+	user_id BIGINT REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,
+	content TEXT NOT NULL,
+	CONSTRAINT constraint_task_comments_on_content CHECK (length(content) <= 10000)
+);
+CREATE INDEX index_task_comments_on_task_id ON task_comments (task_id);
+
+DROP TABLE IF EXISTS task_activities CASCADE;
+CREATE TABLE task_activities (
+	id BIGSERIAL PRIMARY KEY,
+	created_at TIMESTAMPTZ DEFAULT NOW(),
+	task_id BIGINT REFERENCES tasks(id) ON DELETE CASCADE ON UPDATE CASCADE NOT NULL,
+	actor_id BIGINT REFERENCES users(id) ON DELETE SET NULL ON UPDATE CASCADE,
+	activity_type TEXT NOT NULL,
+	meta JSONB DEFAULT '{}'::jsonb NOT NULL
+);
+CREATE INDEX index_task_activities_on_task_id ON task_activities (task_id);
+
 INSERT INTO ai_providers
 ("name", provider, type, config, is_default)
 VALUES
@@ -1060,6 +1143,12 @@ INSERT INTO conversation_statuses (name, category) VALUES
 ('Resolved', 'resolved'),
 ('Closed', 'resolved');
 
+-- Default task statuses
+INSERT INTO task_statuses (name, category, position, is_default) VALUES
+('To do', 'todo', 1, true),
+('In progress', 'in_progress', 2, false),
+('Done', 'done', 3, false);
+
 -- Default roles
 INSERT INTO
 	roles ("name", description, permissions)
@@ -1067,7 +1156,7 @@ VALUES
 	(
 		'Agent',
 		'Role for all agents with limited access to conversations.',
-		'{conversations:read_all,conversations:read_unassigned,conversations:read_assigned,conversations:read_team_inbox,conversations:read_team_all,conversations:read,conversations:update_user_assignee,conversations:update_team_assignee,conversations:update_priority,conversations:update_status,conversations:update_tags,messages:read,messages:write,messages:write_private,view:manage}'
+		'{conversations:read_all,conversations:read_unassigned,conversations:read_assigned,conversations:read_team_inbox,conversations:read_team_all,conversations:read,conversations:update_user_assignee,conversations:update_team_assignee,conversations:update_priority,conversations:update_status,conversations:update_tags,messages:read,messages:write,messages:write_private,view:manage,tasks:read,tasks:write,tasks:delete}'
 	);
 
 INSERT INTO
@@ -1076,7 +1165,7 @@ VALUES
 	(
 		'Admin',
 		'Role for users who have complete access to everything.',
-		'{webhooks:manage,context_links:manage,activity_logs:manage,custom_attributes:manage,contacts:read_all,contacts:read,contacts:write,contacts:block,contacts:delete,contacts:export,contact_notes:read,contact_notes:write,contact_notes:delete,conversations:write,ai:manage,help_center:manage,general_settings:manage,notification_settings:manage,oidc:manage,conversations:read_all,conversations:read_unassigned,conversations:read_assigned,conversations:read_team_inbox,conversations:read_team_all,conversations:read,conversations:update_user_assignee,conversations:update_team_assignee,conversations:update_priority,conversations:update_status,conversations:update_tags,messages:read,messages:write,messages:write_private,view:manage,shared_views:manage,status:manage,tags:manage,macros:manage,users:manage,teams:manage,automations:manage,inboxes:manage,roles:manage,reports:manage,templates:manage,business_hours:manage,sla:manage}'
+		'{webhooks:manage,context_links:manage,activity_logs:manage,custom_attributes:manage,contacts:read_all,contacts:read,contacts:write,contacts:block,contacts:delete,contacts:export,contact_notes:read,contact_notes:write,contact_notes:delete,conversations:write,ai:manage,help_center:manage,general_settings:manage,notification_settings:manage,oidc:manage,conversations:read_all,conversations:read_unassigned,conversations:read_assigned,conversations:read_team_inbox,conversations:read_team_all,conversations:read,conversations:update_user_assignee,conversations:update_team_assignee,conversations:update_priority,conversations:update_status,conversations:update_tags,messages:read,messages:write,messages:write_private,view:manage,shared_views:manage,status:manage,tags:manage,macros:manage,users:manage,teams:manage,automations:manage,inboxes:manage,roles:manage,reports:manage,templates:manage,business_hours:manage,sla:manage,tasks:read,tasks:write,tasks:delete,tasks:manage}'
 	);
 
 

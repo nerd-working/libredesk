@@ -50,6 +50,7 @@ import (
 	"github.com/abhinavxd/libredesk/internal/sla"
 	"github.com/abhinavxd/libredesk/internal/ssrf"
 	"github.com/abhinavxd/libredesk/internal/tag"
+	"github.com/abhinavxd/libredesk/internal/task"
 	"github.com/abhinavxd/libredesk/internal/team"
 	tmpl "github.com/abhinavxd/libredesk/internal/template"
 	"github.com/abhinavxd/libredesk/internal/user"
@@ -332,6 +333,20 @@ func initTag(db *sqlx.DB, i18n *i18n.I18n) *tag.Manager {
 	})
 	if err != nil {
 		log.Fatalf("error initializing tags: %v", err)
+	}
+	return mgr
+}
+
+// initTask inits task manager.
+func initTask(db *sqlx.DB, i18n *i18n.I18n) *task.Manager {
+	var lo = initLogger("task_manager")
+	mgr, err := task.New(task.Opts{
+		DB:   db,
+		Lo:   lo,
+		I18n: i18n,
+	})
+	if err != nil {
+		log.Fatalf("error initializing tasks: %v", err)
 	}
 	return mgr
 }

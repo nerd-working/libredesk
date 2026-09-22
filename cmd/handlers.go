@@ -125,6 +125,27 @@ func initHandlers(g *fastglue.Fastglue, hub *ws.Hub) {
 	g.POST("/api/v1/tags/import", perm(handleImportTags, "tags:manage"))
 	g.GET("/api/v1/tags/import/status", perm(handleGetTagImportStatus, "tags:manage"))
 
+	// Tasks.
+	g.GET("/api/v1/tasks", perm(handleGetTasks, "tasks:read"))
+	g.GET("/api/v1/tasks/{id}", perm(handleGetTask, "tasks:read"))
+	g.POST("/api/v1/tasks", perm(handleCreateTask, "tasks:write"))
+	g.PUT("/api/v1/tasks/{id}", perm(handleUpdateTask, "tasks:write"))
+	g.PUT("/api/v1/tasks/{id}/move", perm(handleMoveTask, "tasks:write"))
+	g.DELETE("/api/v1/tasks/{id}", perm(handleDeleteTask, "tasks:delete"))
+	g.GET("/api/v1/tasks/{id}/activities", perm(handleGetTaskActivities, "tasks:read"))
+	g.GET("/api/v1/tasks/{id}/comments", perm(handleGetTaskComments, "tasks:read"))
+	g.POST("/api/v1/tasks/{id}/comments", perm(handleCreateTaskComment, "tasks:write"))
+	g.DELETE("/api/v1/tasks/{id}/comments/{comment_id}", perm(handleDeleteTaskComment, "tasks:write"))
+	g.GET("/api/v1/conversations/{uuid}/tasks", perm(handleGetConversationTasks, "tasks:read"))
+	g.GET("/api/v1/task-projects", perm(handleGetTaskProjects, "tasks:read"))
+	g.POST("/api/v1/task-projects", perm(handleCreateTaskProject, "tasks:manage"))
+	g.PUT("/api/v1/task-projects/{id}", perm(handleUpdateTaskProject, "tasks:manage"))
+	g.DELETE("/api/v1/task-projects/{id}", perm(handleDeleteTaskProject, "tasks:manage"))
+	g.GET("/api/v1/task-statuses", perm(handleGetTaskStatuses, "tasks:read"))
+	g.POST("/api/v1/task-statuses", perm(handleCreateTaskStatus, "tasks:manage"))
+	g.PUT("/api/v1/task-statuses/{id}", perm(handleUpdateTaskStatus, "tasks:manage"))
+	g.DELETE("/api/v1/task-statuses/{id}", perm(handleDeleteTaskStatus, "tasks:manage"))
+
 	// Macros.
 	g.GET("/api/v1/macros", auth(handleGetMacros))
 	g.GET("/api/v1/macros/compact", perm(handleGetMacrosCompact, "macros:manage"))
