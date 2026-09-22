@@ -715,6 +715,11 @@ func (m *Manager) RecordPriorityChange(priority, conversationUUID string, actor 
 	return m.InsertConversationActivity(models.ActivityPriorityChange, conversationUUID, priority, actor)
 }
 
+// RecordSubjectChange records an activity for a subject change.
+func (m *Manager) RecordSubjectChange(subject, conversationUUID string, actor umodels.User) error {
+	return m.InsertConversationActivity(models.ActivitySubjectChange, conversationUUID, subject, actor)
+}
+
 // RecordStatusChange records an activity for a status change.
 func (m *Manager) RecordStatusChange(status, conversationUUID string, actor umodels.User) error {
 	return m.InsertConversationActivity(models.ActivityStatusChange, conversationUUID, status, actor)
@@ -791,6 +796,8 @@ func (m *Manager) getMessageActivityContent(activityType, newValue, actorName st
 		content = fmt.Sprintf("%s unassigned themselves", actorName)
 	case models.ActivityPriorityChange:
 		content = fmt.Sprintf("%s set priority to %s", actorName, newValue)
+	case models.ActivitySubjectChange:
+		content = fmt.Sprintf("%s changed the subject to %s", actorName, newValue)
 	case models.ActivityStatusChange:
 		content = fmt.Sprintf("%s marked the conversation as %s", actorName, newValue)
 	case models.ActivityTagAdded:

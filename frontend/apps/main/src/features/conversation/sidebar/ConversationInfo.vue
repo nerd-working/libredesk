@@ -11,12 +11,7 @@
       </div>
     </div>
 
-    <div v-if="conversation.subject">
-      <p class="sidebar-label">{{ $t('globals.terms.subject') }}</p>
-      <p class="sidebar-value break-all">
-        {{ conversation.subject }}
-      </p>
-    </div>
+    <ConversationSubject />
 
     <div>
       <p class="sidebar-label">{{ $t('globals.terms.referenceNumber') }}</p>
@@ -138,6 +133,7 @@ import { format } from 'date-fns'
 import { Mail, MessageSquare } from 'lucide-vue-next'
 import SlaBadge from '@/features/sla/SlaBadge.vue'
 import { useConversationStore } from '../../../stores/conversation'
+import ConversationSubject from '@/features/conversation/sidebar/ConversationSubject.vue'
 import CustomAttributes from '@/features/conversation/sidebar/CustomAttributes.vue'
 import { useCustomAttributeStore } from '../../../stores/customAttributes'
 import { EMITTER_EVENTS } from '../../../constants/emitterEvents.js'

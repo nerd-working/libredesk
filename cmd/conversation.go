@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	amodels "github.com/abhinavxd/libredesk/internal/auth/models"
 	"github.com/abhinavxd/libredesk/internal/automation/models"
@@ -22,6 +23,10 @@ import (
 	"github.com/zerodha/fastglue"
 )
 
+// maxConversationSubjectLen caps a manually edited subject. `conversations.subject` is
+// unbounded TEXT, but subjects also travel in email headers, so keep them sane.
+const maxConversationSubjectLen = 1000
+
 type assigneeChangeReq struct {
 	AssigneeID int `json:"assignee_id"`
 }
@@ -32,6 +37,10 @@ type teamAssigneeChangeReq struct {
 
 type priorityUpdateReq struct {
 	Priority string `json:"priority"`
+}
+
+type subjectUpdateReq struct {
+	Subject string `json:"subject"`
 }
 
 type statusUpdateReq struct {
@@ -592,6 +601,42 @@ func handleUpdateConversationPriority(r *fastglue.Request) error {
 		return sendErrorEnvelope(r, err)
 	}
 	if err := app.conversation.UpdateConversationPriority(uuid, 0 /**priority_id**/, priority, user); err != nil {
+		return sendErrorEnvelope(r, err)
+	}
+
+	return r.SendEnvelope(true)
+}
+
+// handleUpdateConversationSubject updates the subject of a conversation.
+func handleUpdateConversationSubject(r *fastglue.Request) error {
+	var (
+		app   = r.Context.(*App)
+		uuid  = r.RequestCtx.UserValue("uuid").(string)
+		auser = r.RequestCtx.UserValue("user").(amodels.User)
+		req   = subjectUpdateReq{}
+	)
+
+	if err := r.Decode(&req, "json"); err != nil {
+		app.lo.Error("error decoding subject update request", "error", err)
+		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.T("errors.parsingRequest"), nil, envelope.InputError)
+	}
+
+	subject := strings.TrimSpace(req.Subject)
+	if subject == "" {
+		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.T("validation.subjectCannotBeEmpty"), nil, envelope.InputError)
+	}
+	if utf8.RuneCountInString(subject) > maxConversationSubjectLen {
+		return r.SendErrorEnvelope(fasthttp.StatusBadRequest, app.i18n.Ts("validation.tooLongSubject", "max", fmt.Sprintf("%d", maxConversationSubjectLen)), nil, envelope.InputError)
+	}
+
+	user, err := app.user.GetAgentCachedOrLoad(auser.ID)
+	if err != nil {
+		return sendErrorEnvelope(r, err)
+	}
+	if _, err = enforceConversationAccess(app, uuid, user); err != nil {
+		return sendErrorEnvelope(r, err)
+	}
+	if err := app.conversation.UpdateConversationSubject(uuid, subject, user); err != nil {
 		return sendErrorEnvelope(r, err)
 	}
 

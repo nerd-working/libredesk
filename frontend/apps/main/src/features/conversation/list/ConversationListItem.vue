@@ -54,10 +54,10 @@
                       class="text-sm truncate min-w-0 text-foreground"
                       :class="isUnread ? 'font-semibold' : 'font-medium'"
                     >
-                      {{ contactFullName }}
+                      {{ primaryTitle }}
                     </h3>
                   </TooltipTrigger>
-                  <TooltipContent>{{ contactFullName }}</TooltipContent>
+                  <TooltipContent>{{ primaryTitle }}</TooltipContent>
                 </Tooltip>
                 <div class="flex items-center gap-1 flex-shrink-0">
                   <PriorityMarker :priority="conversation.priority" />
@@ -81,12 +81,9 @@
                 </div>
               </div>
 
-              <!-- Subject -->
-              <p
-                v-if="showSubject && conversation.subject"
-                class="text-xs text-muted-foreground truncate"
-              >
-                {{ conversation.subject }}
+              <!-- Contact, when the subject took the headline spot -->
+              <p v-if="titleIsSubject" class="text-xs text-muted-foreground truncate">
+                {{ contactFullName }}
               </p>
             </div>
 
@@ -252,6 +249,15 @@ const draftPreview = computed(() => {
 
 const showSubject = computed(
   () => appSettingsStore.settings['app.show_conversation_subject'] !== false
+)
+
+// The subject is the headline when there is one; conversations without a subject
+// (live chat, mostly) keep the contact name as their headline so the card still
+// says who it is from.
+const titleIsSubject = computed(() => showSubject.value && !!props.conversation.subject)
+
+const primaryTitle = computed(() =>
+  titleIsSubject.value ? props.conversation.subject : props.contactFullName
 )
 
 const isUnread = computed(() => props.conversation.unread_message_count > 0)
