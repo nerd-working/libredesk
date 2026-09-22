@@ -149,6 +149,39 @@ cd frontend && pnpm lint            # eslint (with --fix)
 | App refuses to start, mentions pending migrations | `go run ./cmd/ --upgrade --yes --config config.toml`. |
 | `Cannot find matching keyid` from corepack | Update corepack, or run with `COREPACK_INTEGRITY_KEYS=0`. |
 
+## Deploying a fork
+
+`Dockerfile.build` compiles everything from source, so any host that can build a
+Dockerfile can run your branch. The frontend build is memory hungry, though:
+on a host with ~2 GB of RAM it gets OOM-killed (`Killed`, exit code 137). Lower
+the heap with `--build-arg NODE_HEAP_MB=1024`, add swap, or don't build there at
+all and use the workflow below.
+
+### Build in CI, pull the image (recommended for small hosts)
+
+`.github/workflows/build-image.yml` builds the image on a GitHub runner and
+pushes it to this repository's GitHub Container Registry, on every push to
+`main` or `feature/**` and on demand from the Actions tab. Images are tagged
+with the branch and the short SHA:
+
+```
+ghcr.io/<owner>/libredesk:feature-inbox-table-view
+ghcr.io/<owner>/libredesk:sha-15c07a2e
+```
+
+Point your host at one of those tags instead of building from source. The
+branch tag moves with each push, so a redeploy picks up the newest build; pin
+the `sha-` tag when you want a fixed version.
+
+**A new GHCR package is private, even when the repository is public.** After
+the first successful run, open `https://github.com/<owner>?tab=packages`,
+select the package, then *Package settings* and either:
+
+- **Change visibility → Public** — anyone can pull it, no credentials needed; or
+- keep it private and give your host a pull secret: a GitHub personal access
+  token (classic) with the `read:packages` scope, used as the registry password
+  with your GitHub username.
+
 ## Known limitation: native Windows builds
 
 `cmd/handlers.go` serves the frontend assets with `filepath.Join`, which
