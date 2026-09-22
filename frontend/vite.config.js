@@ -90,6 +90,9 @@ export default defineConfig(({ mode, command }) => {
       emptyOutDir: true,
       chunkSizeWarningLimit: 600,
       rollupOptions: {
+        // Rollup keeps this many files in flight at once (default 20). Lowering it
+        // trades build time for a much smaller memory peak, for hosts with little RAM.
+        ...(process.env.VITE_LOW_MEMORY && { maxParallelFileOps: 2 }),
         output: {
           manualChunks: {
             'vue-vendor': ['vue', 'vue-router', 'pinia'],

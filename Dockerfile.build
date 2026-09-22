@@ -5,20 +5,32 @@
 #
 #   docker build -f Dockerfile.build -t libredesk:custom .
 #
-# Set LIBREDESK_VERSION to control the version string shown in the UI.
+# Build args:
+#   LIBREDESK_VERSION  version string shown in the UI (default v0.0.0-custom)
+#   NODE_HEAP_MB       Node heap cap for the Vite build (default 1536). The
+#                      frontend build is the memory-hungry step: if it dies with
+#                      "Killed" / exit code 137, the host ran out of RAM. Lower
+#                      this to fit (e.g. 1024 on a 2 GB box), or add swap.
 
 # ---- Frontend ---------------------------------------------------------------
 FROM node:20-alpine AS frontend
 ARG LIBREDESK_VERSION=v0.0.0-custom
+ARG NODE_HEAP_MB=1536
 ENV VITE_APP_VERSION=${LIBREDESK_VERSION}
 ENV COREPACK_INTEGRITY_KEYS=0
+# Cypress is only used by the e2e suite; downloading its binary here wastes
+# time and ~400 MB of image layer for nothing.
+ENV CYPRESS_INSTALL_BINARY=0
 WORKDIR /src/frontend
 RUN corepack enable
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY frontend/ ./
 COPY static/ ../static/
-RUN pnpm build:main && pnpm build:widget
+# Build the two apps one at a time, each in its own process, so peak memory is
+# one app's build rather than both.
+RUN VITE_LOW_MEMORY=1 NODE_OPTIONS=--max-old-space-size=${NODE_HEAP_MB} pnpm build:main \
+ && VITE_LOW_MEMORY=1 NODE_OPTIONS=--max-old-space-size=${NODE_HEAP_MB} pnpm build:widget
 
 # ---- Backend ----------------------------------------------------------------
 FROM golang:1.25-alpine AS backend
